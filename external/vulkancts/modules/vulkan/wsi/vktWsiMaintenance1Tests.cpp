@@ -893,9 +893,9 @@ tcu::TestStatus presentFenceTest(Context &context, const PresentFenceTestConfig 
             endCommandBuffer(vkd, **commandBuffers[i]);
 
             // Submit the command buffer
-            VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            const VkSubmitInfo submitInfo  = {
-                VK_STRUCTURE_TYPE_SUBMIT_INFO, DE_NULL, surfaceCount, acquireSem.data(), &waitStage, 1u,
+            std::vector<VkPipelineStageFlags> waitStages(surfaceCount, VK_PIPELINE_STAGE_TRANSFER_BIT);
+            const VkSubmitInfo submitInfo = {
+                VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, surfaceCount, acquireSem.data(), waitStages.data(), 1u,
                 &**commandBuffers[i],          1u,      presentSem,
             };
             VK_CHECK(vkd.queueSubmit(devHelper.queue, 1u, &submitInfo, DE_NULL));
@@ -2121,6 +2121,8 @@ tcu::TestStatus releaseImagesTest(Context &context, const ReleaseImagesTestConfi
                     swapchainImages[acquiredIndices[presentIndex]],
                     range,
                 };
+                vkd.cmdPipelineBarrier(**commandBuffers[i], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                       VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0, nullptr, 0, nullptr, 1, &barrier);
 
                 VkClearColorValue clearValue;
                 clearValue.float32[0] = static_cast<float>(i % 33) / 32.0f;
